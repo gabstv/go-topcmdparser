@@ -4,6 +4,7 @@ package topcmdparser
 import (
 	"bufio"
 	"bytes"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -48,27 +49,32 @@ func DoString(input string) (top Top) {
 }
 
 func doRow0(top *Top, line string) {
-	ls := strings.Split(line, ",")
-	if len(ls) != 5 {
+
+	rexp := regexp.MustCompile(`top[\s\-0-9:]+up([:0-9A-z,\s]+?)([0-9] user.*)`)
+	matches := rexp.FindStringSubmatch(line)
+	if len(matches) != 3 {
 		return
 	}
-	// uptime
-	if i := strings.Index(ls[0], "up"); i > -1 && i+2 < len(ls[0])-1 {
-		top.Uptime = strings.TrimSpace(ls[0][i+2:])
+
+	top.Uptime = strings.Trim(matches[1], " ,")
+
+	ls := strings.Split(matches[2], ",")
+	if len(ls) != 4 {
+		return
 	}
 	// users
-	ls[1] = strings.TrimSpace(ls[1])
-	top.Users, _ = strconv.Atoi(strings.Split(ls[1], " ")[0])
+	ls[0] = strings.TrimSpace(ls[0])
+	top.Users, _ = strconv.Atoi(strings.Split(ls[0], " ")[0])
 	// load avgs
 	// 5
-	if i := strings.Index(ls[2], "load average:"); i > -1 {
-		ls[2] = strings.TrimSpace(ls[2][i+13:])
-		top.LoadAvg5, _ = strconv.ParseFloat(ls[2], 64)
+	if i := strings.Index(ls[1], "load average:"); i > -1 {
+		ls[1] = strings.TrimSpace(ls[1][i+13:])
+		top.LoadAvg5, _ = strconv.ParseFloat(ls[1], 64)
 	}
 	// 10
-	top.LoadAvg10, _ = strconv.ParseFloat(strings.TrimSpace(ls[3]), 64)
+	top.LoadAvg10, _ = strconv.ParseFloat(strings.TrimSpace(ls[2]), 64)
 	// 15
-	top.LoadAvg15, _ = strconv.ParseFloat(strings.TrimSpace(ls[4]), 64)
+	top.LoadAvg15, _ = strconv.ParseFloat(strings.TrimSpace(ls[3]), 64)
 }
 
 func doRow1(top *Top, line string) {
