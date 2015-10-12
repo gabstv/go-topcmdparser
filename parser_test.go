@@ -1,6 +1,7 @@
 package topcmdparser
 
 import (
+	"runtime"
 	"testing"
 )
 
